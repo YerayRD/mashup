@@ -1,0 +1,62 @@
+<html>
+	<head>
+		<title>Local activity support for Växjö</title>
+
+		<link href="style.css" rel="stylesheet" type="text/css"/>
+		<!-- Load the Google AJAX API. -->
+		<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+		<!--Google maps API-->
+		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
+		<script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+		<script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+		<script type="text/javascript">
+			//with setOnLoadCallback nothing starts before everything is ready 
+			google.setOnLoadCallback(initialize);
+			
+			var map;
+			function initialize() {
+				options = {
+					zoom: 12,
+					mapTypeId: google.maps.MapTypeId.SATELLITE
+				}
+				map = new google.maps.Map(document.getElementById("map_div"), options);		
+				map.setCenter(new google.maps.LatLng(56.8770413,14.8092744));
+				$(function() {
+					$("#datepicker").datepicker();
+				});
+				getFlickrImages();
+			}
+						
+			function getFlickrImages() {
+				api_key = "b427025ca7fe41bff1a85a05e1f0206e";
+				$.getJSON("http://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=" + api_key + "&text=vaexjoe&per_page=500&format=json&jsoncallback=?", function(data) {
+					var infoWindow = new google.maps.InfoWindow();
+					$.each(data.photos.photo, function(i, item) {
+						$.getJSON('http://api.flickr.com/services/rest/?&method=flickr.photos.geo.getLocation&api_key=' + api_key + '&photo_id=' + item.id + '&format=json&jsoncallback=?', function(geoInfo){
+							if(geoInfo.stat != 'fail') {
+								var marker = new google.maps.Marker({
+									map: map,
+									position: new google.maps.LatLng(geoInfo.photo.location.latitude, geoInfo.photo.location.longitude),
+									title: item.title
+								});
+								google.maps.event.addListener(marker, 'mouseover', function() {
+									infoWindow.setContent('<img width="160" src="http://farm' + item.farm + '.static.flickr.com/' + item.server + '/' + item.id + '_' + item.secret + '.jpg" />');
+									infoWindow.open(map, marker);	
+								});
+								google.maps.event.addListener(marker, 'mouseoout', function() {
+									infoWindow.close();
+								});								
+							}
+						});
+					});
+				});
+			}
+		</script>
+	</head>
+	<body>
+		<center>  
+			<div id="map_div" style="width: 640px; height: 480px;"></div>
+		</center> 
+	</body>
+</html>
